@@ -32,6 +32,7 @@ class Example(QWidget):
         self.rotleft.clicked.connect(self.rotl)
 
         self.ok = None
+        self.click = None
 
         self.rotright = QPushButton('Right')
         self.hbox.addWidget(self.rotright)
@@ -39,11 +40,19 @@ class Example(QWidget):
 
         self.show()
 
-    def mousePressEvent(self, event):
-        if self.ok:
+    def mouseMoveEvent(self, event):
+        if self.click and self.ok:
             coordX = event.x()
             coordY = event.y()
             self.point(coordX, coordY)
+
+    def mousePressEvent(self, event):
+        if self.ok:
+            self.click = True
+
+    def mouseReleaseEvent(self, event):
+        if self.ok:
+            self.click = False
 
     def point(self, x, y):
         im = self.img.convert('RGB')

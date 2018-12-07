@@ -2,53 +2,40 @@ import sys
 from PIL import Image
 from PIL.ImageQt import ImageQt
 import numpy as np
-from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QHBoxLayout
+from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QHBoxLayout, QInputDialog
 from PyQt5.QtWidgets import QLCDNumber, QLabel, QLineEdit
 from PyQt5.QtGui import QPixmap
+from projform import Ui_Dialog
 
 
-class Example(QWidget):
+class Example(QWidget, Ui_Dialog):
     def __init__(self):
         super().__init__()
+        self.setupUi(self)
         self.initUI()
 
     def initUI(self):
         self.setGeometry(300, 300, 300, 300)
         self.setWindowTitle('Шестая программа')
-        self.hbox = QHBoxLayout(self)
 
-        self.lbl = QLabel(self)
-        self.hbox.addWidget(self.lbl)
+        self.uploadBtn.clicked.connect(self.start)
 
-        self.btn = QPushButton('start')
-        self.hbox.addWidget(self.btn)
-        self.btn.clicked.connect(self.start)
-
-        self.text = QLineEdit(self)
-        self.hbox.addWidget(self.text)
-
-        self.rotleft = QPushButton('Left')
-        self.hbox.addWidget(self.rotleft)
-        self.rotleft.clicked.connect(self.rotl)
+        self.pushButton.clicked.connect(self.rotl)
+        self.pushButton_2.clicked.connect(self.rotr)
 
         self.ok = None
         self.click = None
-
-        self.rotright = QPushButton('Right')
-        self.hbox.addWidget(self.rotright)
-        self.rotright.clicked.connect(self.rotr)
 
         self.show()
 
     def mouseMoveEvent(self, event):
         if self.click and self.ok:
-            coordX = event.x()
-            coordY = event.y()
-            self.point(coordX, coordY)
+            self.point(event.x(), event.y())
 
     def mousePressEvent(self, event):
         if self.ok:
             self.click = True
+            self.point(event.x(), event.y())
 
     def mouseReleaseEvent(self, event):
         if self.ok:
@@ -80,16 +67,22 @@ class Example(QWidget):
         self.paint()
 
     def start(self):
-        self.img = Image.open(self.text.text())
-        self.pixels_array = np.asarray(self.img)
-        self.pix = self.img.load()
-        self.paint()
-        self.ok = True
+        i, okBtnPressed = QInputDialog.getText(
+            self, "Введите имя", "Как тебя зовут?"
+        )
+        if okBtnPressed:
+            self.img = Image.open(i)
+            print('ok')
+            self.pixels_array = np.asarray(self.img)
+            self.pix = self.img.load()
+            self.paint()
+            print('ok')
+            self.ok = True
 
     def paint(self):
         pix = QPixmap.fromImage(ImageQt(self.img.convert("RGBA")))
-        self.lbl.setPixmap(pix)
-        self.setLayout(self.hbox)
+        self.MainLabel.setPixmap(pix)
+        print('ok')
 
 
 if __name__ == '__main__':

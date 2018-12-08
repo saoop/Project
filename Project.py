@@ -5,27 +5,48 @@ import numpy as np
 from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QInputDialog, QColorDialog
 from PyQt5.QtGui import QPixmap
 from projform import Ui_Dialog
+from PyQt5 import QtCore, QtGui, QtWidgets
 
 
-class Example(QWidget, Ui_Dialog):
+class Example(QWidget):
     def __init__(self):
         super().__init__()
-        self.setupUi(self)
         self.initUI()
 
     def initUI(self):
         self.setGeometry(300, 300, 900, 700)
         self.setWindowTitle('Шестая программа')
 
+        self.MainLabel = QtWidgets.QLabel(self)
+        self.MainLabel.setGeometry(QtCore.QRect(40, 70, 800, 421))
+        self.MainLabel.setText("")
+
+        self.uploadBtn = QtWidgets.QPushButton(self)
+        self.uploadBtn.setGeometry(QtCore.QRect(40, 530, 151, 51))
+        self.uploadBtn.setText('Upload')
+
+        self.saveBtn = QPushButton(self)
+        self.saveBtn.setGeometry(40, 585, 151, 51)
+        self.saveBtn.setText('Save')
+        self.saveBtn.clicked.connect(self.save_result)
+
+        self.rotLeft = QtWidgets.QPushButton(self)
+        self.rotLeft.setGeometry(QtCore.QRect(214, 530, 61, 23))
+        self.rotLeft.setText('rot Left')
+
+        self.rotRight = QtWidgets.QPushButton(self)
+        self.rotRight.setGeometry(QtCore.QRect(280, 530, 61, 23))
+        self.rotRight.setText('rot right')
+
         self.setColorButton = QPushButton(self)
-        self.setColorButton.setGeometry(400, 400, 80, 30)
+        self.setColorButton.setGeometry(400, 530, 80, 30)
         self.setColorButton.setText('Change Color')
         self.setColorButton.clicked.connect(self.changeColor)
 
         self.uploadBtn.clicked.connect(self.start)
 
-        self.pushButton.clicked.connect(self.rotl)
-        self.pushButton_2.clicked.connect(self.rotr)
+        self.rotLeft.clicked.connect(self.rotl)
+        self.rotRight.clicked.connect(self.rotr)
 
         self.brushColor = (0, 0, 0)
 
@@ -35,29 +56,25 @@ class Example(QWidget, Ui_Dialog):
         self.show()
 
     def mouseMoveEvent(self, event):
-        if self.click and self.ok:
-            self.point(event.x(), event.y())
+        if self.click:
+            self.draw(event.x(), event.y())
 
     def mousePressEvent(self, event):
         if self.ok:
             self.click = True
-            self.point(event.x(), event.y())
+            self.draw(event.x(), event.y())
 
     def mouseReleaseEvent(self, event):
         if self.ok:
             self.click = False
 
-    def point(self, x, y):
-        im = self.img.convert('RGB')
-        pixels = im.load()
+    def draw(self, x, y):
         for i in range(x, x + 5):
             for j in range(y, y + 5):
                 try:
-                    pixels[i - 42, j + 8] = self.brushColor
-                except Exception:
+                    self.pixels[i - 42, j - 42] = self.brushColor
+                except IndexError:
                     pass
-
-        self.img = im
         self.paint()
 
     def changeColor(self):
@@ -80,7 +97,7 @@ class Example(QWidget, Ui_Dialog):
 
     def start(self):
         i, okBtnPressed = QInputDialog.getText(
-            self, "Введите имя", "Как тебя зовут?"
+            self, "Input name", "Name"
         )
         if okBtnPressed:
             self.img = Image.open(i)
@@ -88,10 +105,18 @@ class Example(QWidget, Ui_Dialog):
             self.pix = self.img.load()
             self.paint()
             self.ok = True
+            self.pixels = self.img.load()
 
     def paint(self):
         pix = QPixmap.fromImage(ImageQt(self.img.convert("RGBA")))
         self.MainLabel.setPixmap(pix)
+
+    def save_result(self):
+        i, okBtnPressed = QInputDialog.getText(
+            self, "Input name", "Name"
+        )
+        if okBtnPressed:
+            self.img.save(i)
 
 
 if __name__ == '__main__':

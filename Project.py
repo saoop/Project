@@ -1,10 +1,11 @@
 import sys
 from PIL import Image
 from PIL.ImageQt import ImageQt
+from PIL.ImageEnhance import Brightness
 import numpy as np
-from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QInputDialog, QColorDialog
+from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QInputDialog, QColorDialog, QSlider
 from PyQt5.QtGui import QPixmap
-from projform import Ui_Dialog
 from PyQt5 import QtCore, QtGui, QtWidgets
 
 
@@ -20,6 +21,13 @@ class Example(QWidget):
         self.MainLabel = QtWidgets.QLabel(self)
         self.MainLabel.setGeometry(QtCore.QRect(40, 70, 800, 421))
         self.MainLabel.setText("")
+
+        self.brightSlider = QSlider(Qt.Horizontal, self)
+        self.brightSlider.setGeometry(215, 560, 125, 30)
+        self.brightSlider.setFocusPolicy(Qt.NoFocus)
+        self.brightSlider.sliderReleased.connect(self.change_bright)
+        self.brightSlider.setMaximum(100)
+        self.brightSlider.setMinimum(1)
 
         self.uploadBtn = QtWidgets.QPushButton(self)
         self.uploadBtn.setGeometry(QtCore.QRect(40, 530, 151, 51))
@@ -41,7 +49,7 @@ class Example(QWidget):
         self.setColorButton = QPushButton(self)
         self.setColorButton.setGeometry(400, 530, 80, 30)
         self.setColorButton.setText('Change Color')
-        self.setColorButton.clicked.connect(self.changeColor)
+        self.setColorButton.clicked.connect(self.change_color)
 
         self.uploadBtn.clicked.connect(self.start)
 
@@ -77,7 +85,7 @@ class Example(QWidget):
                     pass
         self.paint()
 
-    def changeColor(self):
+    def change_color(self):
         color = QColorDialog.getColor()
         if color.isValid():
             self.brushColor = color.red(), color.green(), color.blue()
@@ -93,6 +101,12 @@ class Example(QWidget):
         rotate = np.asarray(self.img)
         rotate = np.rot90(rotate, 1)
         self.img = Image.fromarray(rotate)
+        self.paint()
+
+    def change_bright(self):
+        # !!!!! ПОСЛЕ ИЗМЕНЕНИЯ ЯРКОСТИ НЕ РАБОТАЕТ РИСОВАНИЕ
+        val = self.brightSlider.value()
+        self.img = Brightness(self.img).enhance(val / 50)
         self.paint()
 
     def start(self):

@@ -2,8 +2,7 @@ import sys
 from PIL import Image
 from PIL.ImageQt import ImageQt
 import numpy as np
-from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QHBoxLayout, QInputDialog
-from PyQt5.QtWidgets import QLCDNumber, QLabel, QLineEdit
+from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QInputDialog, QColorDialog
 from PyQt5.QtGui import QPixmap
 from projform import Ui_Dialog
 
@@ -15,13 +14,20 @@ class Example(QWidget, Ui_Dialog):
         self.initUI()
 
     def initUI(self):
-        self.setGeometry(300, 300, 300, 300)
+        self.setGeometry(300, 300, 900, 700)
         self.setWindowTitle('Шестая программа')
+
+        self.setColorButton = QPushButton(self)
+        self.setColorButton.setGeometry(400, 400, 80, 30)
+        self.setColorButton.setText('Change Color')
+        self.setColorButton.clicked.connect(self.changeColor)
 
         self.uploadBtn.clicked.connect(self.start)
 
         self.pushButton.clicked.connect(self.rotl)
         self.pushButton_2.clicked.connect(self.rotr)
+
+        self.brushColor = (0, 0, 0)
 
         self.ok = None
         self.click = None
@@ -47,12 +53,18 @@ class Example(QWidget, Ui_Dialog):
         for i in range(x, x + 5):
             for j in range(y, y + 5):
                 try:
-                    pixels[i - 10, j - 12] = (0, 0, 0)
+                    pixels[i - 42, j + 8] = self.brushColor
                 except Exception:
                     pass
 
         self.img = im
         self.paint()
+
+    def changeColor(self):
+        color = QColorDialog.getColor()
+        if color.isValid():
+            self.brushColor = color.red(), color.green(), color.blue()
+            print(self.brushColor)
 
     def rotr(self):
         rotate = np.asarray(self.img)
@@ -72,17 +84,14 @@ class Example(QWidget, Ui_Dialog):
         )
         if okBtnPressed:
             self.img = Image.open(i)
-            print('ok')
             self.pixels_array = np.asarray(self.img)
             self.pix = self.img.load()
             self.paint()
-            print('ok')
             self.ok = True
 
     def paint(self):
         pix = QPixmap.fromImage(ImageQt(self.img.convert("RGBA")))
         self.MainLabel.setPixmap(pix)
-        print('ok')
 
 
 if __name__ == '__main__':

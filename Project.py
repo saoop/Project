@@ -28,6 +28,7 @@ class Example(QWidget):
         self.brightSlider.sliderReleased.connect(self.change_bright)
         self.brightSlider.setMaximum(100)
         self.brightSlider.setMinimum(1)
+        self.brightSlider.setValue(50)
 
         self.uploadBtn = QtWidgets.QPushButton(self)
         self.uploadBtn.setGeometry(QtCore.QRect(40, 530, 151, 51))
@@ -104,10 +105,15 @@ class Example(QWidget):
         self.paint()
 
     def change_bright(self):
-        # !!!!! ПОСЛЕ ИЗМЕНЕНИЯ ЯРКОСТИ НЕ РАБОТАЕТ РИСОВАНИЕ
-        val = self.brightSlider.value()
-        self.img = Brightness(self.img).enhance(val / 50)
-        self.paint()
+        try:
+            val = self.brightSlider.value()
+            self.img = Brightness(self.img).enhance(val / 50)
+            # После изменения яркости не работало рисование, надо было обновить переменную self.pixels
+            self.pixels = self.img.load()
+            self.paint()
+
+        except Exception:
+            pass
 
     def start(self):
         i, okBtnPressed = QInputDialog.getText(

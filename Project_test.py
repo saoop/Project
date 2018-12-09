@@ -58,8 +58,21 @@ class Example(QWidget):
 
         self.negativeFilter = QPushButton(self)
         self.negativeFilter.setText('Negative')
+        self.negativeFilter.clicked.connect(self.make_negative)
         self.negativeFilter.hide()
         self.filtersBox.addWidget(self.negativeFilter)
+
+        self.whiteBlackFilter = QPushButton(self)
+        self.whiteBlackFilter.setText('White and Black')
+        self.whiteBlackFilter.clicked.connect(self.make_black_white)
+        self.whiteBlackFilter.hide()
+        self.filtersBox.addWidget(self.whiteBlackFilter)
+
+        self.grayFilter = QPushButton(self)
+        self.grayFilter.setText('Gray Filter')
+        self.grayFilter.clicked.connect(self.make_gray)
+        self.grayFilter.hide()
+        self.filtersBox.addWidget(self.grayFilter)
 
         self.ok = None
         self.click = None
@@ -76,12 +89,47 @@ class Example(QWidget):
 
         self.show()
 
+    def make_gray(self):
+        x, y = self.img.size
+        for i in range(x):
+            for j in range(y):
+                r, g, b = self.pixels[i, j]
+                gray = int(r * 0.2126 + g * 0.7152 + b * 0.0722)
+                self.pixels[i, j] = (gray, gray, gray)
+        self.paint()
+
+    def make_black_white(self):
+        x, y = self.img.size
+        s = 255 / 2 * 3
+        for i in range(x):
+            for j in range(y):
+                r, g, b = self.pixels[i, j]
+                if r + g + b < s:
+                    self.pixels[i, j] = (0, 0, 0)
+                else:
+                    self.pixels[i, j] = (255, 255, 255)
+        self.paint()
+
+    def make_negative(self):
+
+        # self.pixels = map(lambda x: (255 - x[0], 255 - x[1], 255 - x[2]), self.pixels) Не работает((
+        x, y = self.img.size
+        for i in range(x):
+            for j in range(y):
+                r, g, b = self.pixels[i, j]
+                self.pixels[i, j] = (255 - r, 255 - g, 255 - b)
+        self.paint()
+
     def show_hide_filters(self):
         if self.Filters.text() == 'Show Filters':
             self.negativeFilter.setVisible(True)
+            self.whiteBlackFilter.setVisible(True)
+            self.grayFilter.setVisible(True)
             self.Filters.setText('Hide Filters')
         else:
             self.negativeFilter.hide()
+            self.whiteBlackFilter.hide()
+            self.grayFilter.hide()
             self.Filters.setText('Show Filters')
 
     def mouseMoveEvent(self, event):

@@ -25,12 +25,14 @@ class Example(QWidget):
         self.brightSlider = QSlider(Qt.Horizontal, self)
         self.brightSlider.setGeometry(215, 560, 125, 30)
         self.brightSlider.setFocusPolicy(Qt.NoFocus)
+
         self.brightSlider.sliderReleased.connect(self.change_bright)
         self.brightSlider.setMaximum(100)
         self.brightSlider.setMinimum(1)
         self.brightSlider.setValue(50)
-
         self.uploadBtn = QtWidgets.QPushButton(self)
+
+
         self.uploadBtn.setGeometry(QtCore.QRect(40, 530, 151, 51))
         self.uploadBtn.setText('Upload')
 
@@ -96,22 +98,27 @@ class Example(QWidget):
         rotate = np.asarray(self.img)
         rotate = np.rot90(rotate, -1)
         self.img = Image.fromarray(rotate)
+        self.pixels = self.img.load()
         self.paint()
 
     def rotl(self):
         rotate = np.asarray(self.img)
         rotate = np.rot90(rotate, 1)
         self.img = Image.fromarray(rotate)
+        self.pixels = self.img.load()
         self.paint()
 
     def change_bright(self):
+        # !!!!! ПОСЛЕ ИЗМЕНЕНИЯ ЯРКОСТИ НЕ РАБОТАЕТ РИСОВАНИЕ
+        val = self.brightSlider.value()
+        self.img = Brightness(self.img).enhance(val / 50)
+        self.paint()
         try:
             val = self.brightSlider.value()
             self.img = Brightness(self.img).enhance(val / 50)
             # После изменения яркости не работало рисование, надо было обновить переменную self.pixels
             self.pixels = self.img.load()
             self.paint()
-
         except Exception:
             pass
 
@@ -129,6 +136,7 @@ class Example(QWidget):
 
     def paint(self):
         pix = QPixmap.fromImage(ImageQt(self.img.convert("RGBA")))
+
         self.MainLabel.setPixmap(pix)
 
     def save_result(self):

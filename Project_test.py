@@ -24,21 +24,37 @@ class Example(QWidget):
         self.lbl = QLabel(self)
         self.mainHBox.addWidget(self.lbl)
 
+        brightBox = QVBoxLayout(self)
+
         self.brightSlider = QSlider(Qt.Vertical, self)
         self.brightSlider.setFocusPolicy(Qt.NoFocus)
         self.brightSlider.sliderReleased.connect(self.change_bright)
         self.brightSlider.setMaximum(100)
         self.brightSlider.setMinimum(1)
         self.brightSlider.setValue(50)
-        self.mainHBox.addWidget(self.brightSlider)
+        brightBox.addWidget(self.brightSlider)
 
+        self.brightImage = QLabel(self)
+        self.brightImage.setPixmap(QPixmap('creative.png'))
+        brightBox.addWidget(self.brightImage)
+
+        self.mainHBox.addLayout(brightBox)
+
+        sharpBox = QVBoxLayout(self)
         self.sharpSlider = QSlider(Qt.Vertical, self)
         self.sharpSlider.setFocusPolicy(Qt.NoFocus)
         self.sharpSlider.sliderReleased.connect(self.change_sharpness)
         self.sharpSlider.setMinimum(1)
         self.sharpSlider.setMaximum(250)
         self.sharpSlider.setValue(125)
-        self.mainHBox.addWidget(self.sharpSlider)
+        sharpBox.addWidget(self.sharpSlider)
+
+        self.sharpImage = QLabel(self)
+        self.sharpImage.setPixmap(QPixmap('cooking-knife.png'))
+        sharpBox.addWidget(self.sharpImage)
+        self.mainHBox.addLayout(sharpBox)
+
+        contrastBox = QVBoxLayout(self)
 
         self.contrastSlider = QSlider(Qt.Vertical, self)
         self.contrastSlider.setFocusPolicy(Qt.NoFocus)
@@ -46,7 +62,12 @@ class Example(QWidget):
         self.contrastSlider.setMinimum(1)
         self.contrastSlider.setMaximum(100)
         self.contrastSlider.setValue(50)
-        self.mainHBox.addWidget(self.contrastSlider)
+        contrastBox.addWidget(self.contrastSlider)
+
+        self.contrastImage = QLabel(self)
+        self.contrastImage.setPixmap(QPixmap('contrast.png'))
+        contrastBox.addWidget(self.contrastImage)
+        self.mainHBox.addLayout(contrastBox)
 
         self.btn = QPushButton('Upload')
         self.vbox.addWidget(self.btn)

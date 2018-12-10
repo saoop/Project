@@ -1,7 +1,7 @@
 import sys
 from PIL import Image
 from PIL.ImageQt import ImageQt
-from PIL.ImageEnhance import Brightness
+from PIL.ImageEnhance import Brightness, Sharpness, Contrast
 import numpy as np
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QInputDialog, QColorDialog, QSlider, QLabel, QHBoxLayout, QLineEdit, QVBoxLayout
@@ -26,12 +26,27 @@ class Example(QWidget):
 
         self.brightSlider = QSlider(Qt.Vertical, self)
         self.brightSlider.setFocusPolicy(Qt.NoFocus)
-
         self.brightSlider.sliderReleased.connect(self.change_bright)
         self.brightSlider.setMaximum(100)
         self.brightSlider.setMinimum(1)
         self.brightSlider.setValue(50)
         self.mainHBox.addWidget(self.brightSlider)
+
+        self.sharpSlider = QSlider(Qt.Vertical, self)
+        self.sharpSlider.setFocusPolicy(Qt.NoFocus)
+        self.sharpSlider.sliderReleased.connect(self.change_sharpness)
+        self.sharpSlider.setMinimum(1)
+        self.sharpSlider.setMaximum(250)
+        self.sharpSlider.setValue(125)
+        self.mainHBox.addWidget(self.sharpSlider)
+
+        self.contrastSlider = QSlider(Qt.Vertical, self)
+        self.contrastSlider.setFocusPolicy(Qt.NoFocus)
+        self.contrastSlider.sliderReleased.connect(self.change_contrast)
+        self.contrastSlider.setMinimum(1)
+        self.contrastSlider.setMaximum(100)
+        self.contrastSlider.setValue(50)
+        self.mainHBox.addWidget(self.contrastSlider)
 
         self.btn = QPushButton('Upload')
         self.vbox.addWidget(self.btn)
@@ -74,6 +89,12 @@ class Example(QWidget):
         self.grayFilter.hide()
         self.filtersBox.addWidget(self.grayFilter)
 
+        self.sepiaFilter = QPushButton(self)
+        self.sepiaFilter.setText('Sepia')
+        self.sepiaFilter.clicked.connect(self.make_sepia)
+        self.sepiaFilter.hide()
+        self.filtersBox.addWidget(self.sepiaFilter)
+
         self.ok = None
         self.click = None
 
@@ -88,6 +109,17 @@ class Example(QWidget):
         self.setLayout(self.mainHBox)
 
         self.show()
+
+    def make_sepia(self):
+        x, y = self.img.size
+        for i in range(x):
+            for j in range(y):
+                r, g, b = self.pixels[i, j]
+                red = int(r * 0.393 + g * 0.769 + b * 0.189)
+                green = int(r * 0.349 + g * 0.686 + b * 0.168)
+                blue = int(r * 0.272 + g * 0.534 + b * 0.131)
+                self.pixels[i, j] = (red, green, blue)
+        self.paint()
 
     def make_gray(self):
         x, y = self.img.size
@@ -111,8 +143,7 @@ class Example(QWidget):
         self.paint()
 
     def make_negative(self):
-
-        # self.pixels = map(lambda x: (255 - x[0], 255 - x[1], 255 - x[2]), self.pixels) Не работает((
+        # self.pixels = map(lambda x: (255 - x[0], 255 - x[1], 255 - x[2]), self.pixels) Не работает :(
         x, y = self.img.size
         for i in range(x):
             for j in range(y):
@@ -125,9 +156,11 @@ class Example(QWidget):
             self.negativeFilter.setVisible(True)
             self.whiteBlackFilter.setVisible(True)
             self.grayFilter.setVisible(True)
+            self.sepiaFilter.setVisible(True)
             self.Filters.setText('Hide Filters')
         else:
             self.negativeFilter.hide()
+            self.sepiaFilter.hide()
             self.whiteBlackFilter.hide()
             self.grayFilter.hide()
             self.Filters.setText('Show Filters')
@@ -161,6 +194,27 @@ class Example(QWidget):
             self.setColorButton.setStyleSheet(
                 "background-color: {0}".format(color.name())
             )
+
+    def change_sharpness(self):
+        if self.ok:
+            try:
+                val = self.sharpSlider.value()
+                enhancer = Sharpness(self.img)
+                self.img = enhancer.enhance(val / 50)
+                self.pixels = self.img.load()
+                self.paint()
+            except Exception:
+                pass
+
+    def change_contrast(self):
+        if self.ok:
+            try:
+                val = self.contrastSlider.value()
+                self.img = Contrast(self.img).enhance(val / 50)
+                self.pixels = self.img.load()
+                self.paint()
+            except Exception:
+                pass
 
     def change_bright(self):
         # !!!!! ПОСЛЕ ИЗМЕНЕНИЯ ЯРКОСТИ НЕ РАБОТАЕТ РИСОВАНИЕ

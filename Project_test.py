@@ -4,9 +4,8 @@ from PIL.ImageQt import ImageQt
 from PIL.ImageEnhance import Brightness, Sharpness, Contrast
 import numpy as np
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QInputDialog, QColorDialog, QSlider, QLabel, QHBoxLayout, QLineEdit, QVBoxLayout
+from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QInputDialog, QColorDialog, QSlider, QLabel, QHBoxLayout, QVBoxLayout
 from PyQt5.QtGui import QPixmap
-from PyQt5 import QtCore, QtGui, QtWidgets
 
 
 class Example(QWidget):
@@ -20,6 +19,7 @@ class Example(QWidget):
         self.mainHBox = QHBoxLayout(self)
         self.vbox = QVBoxLayout(self)
         self.filtersBox = QVBoxLayout(self)
+        self.backNextBox = QHBoxLayout(self)
 
         self.lbl = QLabel(self)
         self.mainHBox.addWidget(self.lbl)
@@ -116,6 +116,19 @@ class Example(QWidget):
         self.sepiaFilter.hide()
         self.filtersBox.addWidget(self.sepiaFilter)
 
+        self.backButton = QPushButton(self)
+        self.backButton.clicked.connect(self.back)
+        self.backButton.setText('Back')
+        self.backNextBox.addWidget(self.backButton)
+
+        self.nextButton = QPushButton(self)
+        self.nextButton.clicked.connect(self.next)
+        self.nextButton.setText('Next')
+        self.backNextBox.addWidget(self.nextButton)
+
+        self.arrayOfImages = []
+        self.currentIndex = None
+
         self.ok = None
         self.click = None
 
@@ -125,54 +138,99 @@ class Example(QWidget):
         self.vbox.addWidget(self.rotright)
         self.rotright.clicked.connect(self.rotr)
 
+        self.vbox.addLayout(self.backNextBox)
+
         self.mainHBox.addLayout(self.vbox)
         self.mainHBox.addLayout(self.filtersBox)
         self.setLayout(self.mainHBox)
 
         self.show()
 
+    def update_array(self):
+        if len(self.arrayOfImages) - 1 > self.currentIndex:
+            self.arrayOfImages[self.currentIndex + 1] = self.img
+            self.currentIndex += 1
+        else:
+            self.arrayOfImages.append(self.img)
+            self.currentIndex += 1
+
+    def next(self):
+        if self.currentIndex < len(self.arrayOfImages) - 1:
+            self.currentIndex += 1
+            self.img = self.arrayOfImages[self.currentIndex]
+            self.pixels = self.img.load()
+            self.paint()
+
+    def back(self):
+        if self.currentIndex > 0:
+            self.currentIndex -= 1
+            self.img = self.arrayOfImages[self.currentIndex]
+            self.pixels = self.img.load()
+            self.paint()
+
     def make_sepia(self):
         x, y = self.img.size
+        working_img = self.img.copy()
+        pix = working_img.load()
         for i in range(x):
             for j in range(y):
-                r, g, b = self.pixels[i, j]
+                r, g, b = pix[i, j]
                 red = int(r * 0.393 + g * 0.769 + b * 0.189)
                 green = int(r * 0.349 + g * 0.686 + b * 0.168)
                 blue = int(r * 0.272 + g * 0.534 + b * 0.131)
-                self.pixels[i, j] = (red, green, blue)
+                pix[i, j] = (red, green, blue)
+        self.img = working_img.copy()
+        self.update_array()
+
         self.paint()
 
     def make_gray(self):
         x, y = self.img.size
+        working_img = self.img.copy()
+        pix = working_img.load()
         for i in range(x):
             for j in range(y):
-                r, g, b = self.pixels[i, j]
+                r, g, b = pix[i, j]
                 gray = int(r * 0.2126 + g * 0.7152 + b * 0.0722)
-                self.pixels[i, j] = (gray, gray, gray)
+                pix[i, j] = (gray, gray, gray)
+        self.img = working_img.copy()
+        self.update_array()
+
         self.paint()
 
     def make_black_white(self):
         x, y = self.img.size
         s = 255 / 2 * 3
+        working_img = self.img.copy()
+        pix = working_img.load()
         for i in range(x):
             for j in range(y):
-                r, g, b = self.pixels[i, j]
+                r, g, b = pix[i, j]
                 if r + g + b < s:
-                    self.pixels[i, j] = (0, 0, 0)
+                    pix[i, j] = (0, 0, 0)
                 else:
-                    self.pixels[i, j] = (255, 255, 255)
+                    pix[i, j] = (255, 255, 255)
+        self.img = working_img.copy()
+        self.update_array()
+
         self.paint()
 
     def make_negative(self):
         # self.pixels = map(lambda x: (255 - x[0], 255 - x[1], 255 - x[2]), self.pixels) Не работает :(
         x, y = self.img.size
+        working_img = self.img.copy()
+        pix = working_img.load()
         for i in range(x):
             for j in range(y):
-                r, g, b = self.pixels[i, j]
-                self.pixels[i, j] = (255 - r, 255 - g, 255 - b)
+                r, g, b = pix[i, j]
+                pix[i, j] = (255 - r, 255 - g, 255 - b)
+        self.img = working_img.copy()
+        self.update_array()
+
         self.paint()
 
     def show_hide_filters(self):
+
         if self.Filters.text() == 'Show Filters':
             self.negativeFilter.setVisible(True)
             self.whiteBlackFilter.setVisible(True)
@@ -192,20 +250,25 @@ class Example(QWidget):
 
     def mousePressEvent(self, event):
         if self.ok:
+            self.working_img = self.img.copy()
+            self.pix = self.working_img.load()
             self.point(event.x(), event.y())
             self.click = True
 
     def mouseReleaseEvent(self, event):
         self.click = False
+        self.img = self.working_img.copy()
+        self.working_img = None
+        self.update_array()
 
     def point(self, x, y):
         for i in range(x, x + 5):
             for j in range(y, y + 5):
                 try:
-                    self.pixels[i - 10, j - 12] = self.brushColor
+                    self.pix[i - 10, j - 12] = self.brushColor
                 except IndexError:
                     pass
-
+        self.img = self.working_img.copy()
         self.paint()
 
     def change_color(self):
@@ -223,6 +286,7 @@ class Example(QWidget):
                 enhancer = Sharpness(self.img)
                 self.img = enhancer.enhance(val / 50)
                 self.pixels = self.img.load()
+                self.update_array()
                 self.paint()
             except Exception:
                 pass
@@ -233,6 +297,8 @@ class Example(QWidget):
                 val = self.contrastSlider.value()
                 self.img = Contrast(self.img).enhance(val / 50)
                 self.pixels = self.img.load()
+                self.update_array()
+
                 self.paint()
             except Exception:
                 pass
@@ -245,6 +311,8 @@ class Example(QWidget):
                 self.img = Brightness(self.img).enhance(val / 50)
                 # После изменения яркости не работало рисование, надо было обновить переменную self.pixels
                 self.pixels = self.img.load()
+                self.update_array()
+
                 self.paint()
             except Exception:
                 pass
@@ -254,6 +322,8 @@ class Example(QWidget):
         rotate = np.rot90(rotate, -1)
         self.img = Image.fromarray(rotate)
         self.pixels = self.img.load()
+        self.update_array()
+
         self.paint()
 
     def rotl(self):
@@ -261,6 +331,8 @@ class Example(QWidget):
         rotate = np.rot90(rotate, 1)
         self.img = Image.fromarray(rotate)
         self.pixels = self.img.load()
+        self.update_array()
+
         self.paint()
 
     def start(self):
@@ -269,9 +341,12 @@ class Example(QWidget):
         )
         if okBtnPressed:
             self.img = Image.open(name)
+            self.arrayOfImages.append(self.img)
+            self.currentIndex = 0
             self.pixels_array = np.asarray(self.img)
             self.pixels = self.img.load()
             self.paint()
+
             self.ok = True
 
     def paint(self):

@@ -14,7 +14,7 @@ class Example(QWidget):
         self.initUI()
 
     def initUI(self):
-        self.setGeometry(50, 50, 1000, 500)
+        self.setGeometry(0, 0, 1000, 500)
         self.setWindowTitle('Шестая программа')
         self.mainHBox = QHBoxLayout(self)
         self.vbox = QVBoxLayout(self)
@@ -83,6 +83,16 @@ class Example(QWidget):
         self.vbox.addWidget(self.setColorButton)
         self.setColorButton.clicked.connect(self.change_color)
 
+        self.startDrawingButton = QPushButton(self)
+        self.startDrawingButton.clicked.connect(self.run_drawing)
+        self.startDrawingButton.setText('Start Draw')
+        self.vbox.addWidget(self.startDrawingButton)
+
+        self.startSelectionButton = QPushButton(self)
+        self.startSelectionButton.clicked.connect(self.run_selection)
+        self.startSelectionButton.setText('Selection')
+        self.vbox.addWidget(self.startSelectionButton)
+
         self.rotleft = QPushButton('Left')
         self.vbox.addWidget(self.rotleft)
         self.rotleft.clicked.connect(self.rotl)
@@ -131,6 +141,9 @@ class Example(QWidget):
 
         self.ok = None
         self.click = None
+        self.isDrawing = None
+        self.isSelection = None
+        self.release = True
 
         self.brushColor = (0, 0, 0)
 
@@ -145,6 +158,32 @@ class Example(QWidget):
         self.setLayout(self.mainHBox)
 
         self.show()
+
+    def run_selection(self):
+        if not self.isSelection:
+            self.isSelection = True
+            self.startSelectionButton.setText('Stop Selection')
+            if self.startDrawingButton.text() == 'Stop Drawing':
+                self.run_drawing()
+        else:
+            self.isSelection = False
+            self.startSelectionButton.setText('Start Selection')
+
+    def run_drawing(self):
+        if not self.isDrawing:
+            self.isDrawing = True
+            self.startDrawingButton.setText('Stop Drawing')
+            self.startDrawingButton.setStyleSheet(
+                "background-color: {0}".format('#f0f0f0')
+            )
+            if self.startSelectionButton.text() == 'Stop Selection':
+                self.run_selection()
+        else:
+            self.isDrawing = False
+            self.startDrawingButton.setText('Start Drawing')
+            self.startDrawingButton.setStyleSheet(
+                "background-color: {0}".format('#ffffff')
+            )
 
     def update_array(self):
         if len(self.arrayOfImages) - 1 > self.currentIndex:
@@ -247,19 +286,76 @@ class Example(QWidget):
     def mouseMoveEvent(self, event):
         if self.click:
             self.point(event.x(), event.y())
+        elif self.isSelection:
+            self.x2 = event.x()
+            self.y2 = event.y()
+            step_x = 1 if self.x1 < self.x2 else -1
+            step_y = 1 if self.y1 < self.y2 else - 1
+            self.selection(self.x1, self.y1, self.x2, self.y2, step_x, step_y)
 
     def mousePressEvent(self, event):
-        if self.ok:
+        if self.ok and self.isDrawing:
             self.working_img = self.img.copy()
             self.pix = self.working_img.load()
             self.point(event.x(), event.y())
             self.click = True
 
+        elif self.ok and self.isSelection:
+            self.currentIndex += 1
+            self.arrayOfImages.append(self.img)
+            self.x1 = event.x()
+            self.y1 = event.y()
+
+    def mouseDoubleClickEvent(self, event):
+        if self.ok and self.x2:
+            self.paint_selection_area()
+
     def mouseReleaseEvent(self, event):
-        self.click = False
-        self.img = self.working_img.copy()
-        self.working_img = None
+        if self.isDrawing and self.ok:
+            self.click = None
+            self.img = self.working_img.copy()
+            self.working_img = None
+            self.update_array()
+
+        elif self.isSelection and self.ok:
+            self.x2 = event.x()
+            self.y2 = event.y()
+            step_x = 1 if self.x1 < self.x2 else -1
+            step_y = 1 if self.y1 < self.y2 else - 1
+            self.selection(self.x1, self.y1, self.x2, self.y2, step_x, step_y)
+            #self.update_array() не надо это
+
+    def paint_selection_area(self):
+        step_x = 1 if self.x1 < self.x2 else - 1
+        step_y = 1 if self.y1 < self.y2 else - 1
+        work_img = self.img.copy()
+        pix = work_img.load()
+        for i in range(self.x1, self.x2, step_x):
+            for j in range(self.y1, self.y2, step_y):
+                try:
+                    pix[i - 10, j - 12] = self.brushColor
+                except IndexError:
+                    pass
+        self.img = work_img.copy()
         self.update_array()
+        self.paint()
+
+    def selection(self, x1, y1, x2, y2, step_x, step_y):
+        working_image = self.arrayOfImages[self.currentIndex - 1].copy()
+        pix = working_image.load()
+        try:
+            for i in range(x1, x2, step_x):
+                pix[i - 10, y1 - 12] = (0, 0, 0)
+                pix[i - 10, y2 - 12] = (0, 0, 0)
+            for i in range(y1, y2, step_y):
+                pix[x1 - 10, i - 12] = (0, 0, 0)
+                pix[x2 - 10, i - 12] = (0, 0, 0)
+        except IndexError:
+            pass
+
+        self.arrayOfImages[self.currentIndex] = working_image
+        self.img = working_image.copy()
+        self.paint()
 
     def point(self, x, y):
         for i in range(x, x + 5):
@@ -336,18 +432,21 @@ class Example(QWidget):
         self.paint()
 
     def start(self):
-        name, okBtnPressed = QInputDialog.getText(
-            self, "input name", "name"
-        )
-        if okBtnPressed:
-            self.img = Image.open(name)
-            self.arrayOfImages.append(self.img)
-            self.currentIndex = 0
-            self.pixels_array = np.asarray(self.img)
-            self.pixels = self.img.load()
-            self.paint()
+        try:
+            name, okBtnPressed = QInputDialog.getText(
+                self, "input name", "name"
+            )
+            if okBtnPressed:
+                self.img = Image.open(name)
+                self.arrayOfImages.append(self.img)
+                self.currentIndex = 0
+                self.pixels_array = np.asarray(self.img)
+                self.pixels = self.img.load()
+                self.paint()
 
-            self.ok = True
+                self.ok = True
+        except Exception:
+            print('Wrong Name')
 
     def paint(self):
         pix = QPixmap.fromImage(ImageQt(self.img.convert("RGBA")))
@@ -355,11 +454,14 @@ class Example(QWidget):
         self.setLayout(self.mainHBox)
 
     def save_result(self):
-        i, okBtnPressed = QInputDialog.getText(
-            self, "Input name", "Name"
-        )
-        if okBtnPressed:
-            self.img.save(i)
+        try:
+            i, okBtnPressed = QInputDialog.getText(
+                self, "Input name", "Name"
+            )
+            if okBtnPressed:
+                self.img.save(i)
+        except Exception:
+            print('Wrong Format')
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)

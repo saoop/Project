@@ -143,7 +143,8 @@ class Example(QWidget):
         self.click = None
         self.isDrawing = None
         self.isSelection = None
-        self.release = True
+        self.rel = True
+        self.doubleclick = False
 
         self.brushColor = (0, 0, 0)
 
@@ -306,24 +307,28 @@ class Example(QWidget):
             self.x1 = event.x()
             self.y1 = event.y()
 
-    def mouseDoubleClickEvent(self, event):
-        if self.ok and self.x2:
+    def mouseDoubleClickEvent(self, QMouseEvent):
+        if self.ok and self.doubleclick and not self.isSelection and not self.isDrawing:
             self.paint_selection_area()
 
     def mouseReleaseEvent(self, event):
-        if self.isDrawing and self.ok:
-            self.click = None
-            self.img = self.working_img.copy()
-            self.working_img = None
-            self.update_array()
+        if self.isDrawing and self.ok and not self.doubleclick:
+            try:
+                self.click = None
+                self.img = self.working_img.copy()
+                self.working_img = None
+                self.update_array()
+            except Exception:
+                pass
 
         elif self.isSelection and self.ok:
             self.x2 = event.x()
             self.y2 = event.y()
+            self.doubleclick = True
             step_x = 1 if self.x1 < self.x2 else -1
             step_y = 1 if self.y1 < self.y2 else - 1
             self.selection(self.x1, self.y1, self.x2, self.y2, step_x, step_y)
-            #self.update_array() не надо это
+            # self.update_array() не надо это
 
     def paint_selection_area(self):
         step_x = 1 if self.x1 < self.x2 else - 1

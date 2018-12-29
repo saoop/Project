@@ -126,6 +126,13 @@ class Example(QWidget):
         self.sepiaFilter.hide()
         self.filtersBox.addWidget(self.sepiaFilter)
 
+        self.coldFilter = QPushButton(self)
+        self.coldFilter.setText('Cold')
+        self.coldFilter.clicked.connect(self.make_cold)
+        self.coldFilter.hide()
+        self.filtersBox.addWidget(self.coldFilter)
+
+
         self.backButton = QPushButton(self)
         self.backButton.clicked.connect(self.back)
         self.backButton.setText('Back')
@@ -190,6 +197,7 @@ class Example(QWidget):
         if len(self.arrayOfImages) - 1 > self.currentIndex:
             self.arrayOfImages[self.currentIndex + 1] = self.img
             self.currentIndex += 1
+
         else:
             self.arrayOfImages.append(self.img)
             self.currentIndex += 1
@@ -207,6 +215,21 @@ class Example(QWidget):
             self.img = self.arrayOfImages[self.currentIndex]
             self.pixels = self.img.load()
             self.paint()
+
+    def make_cold(self):
+        x, y = self.img.size
+        working_img = self.img.copy()
+        pix = working_img.load()
+        for i in range(x):
+            for j in range(y):
+                r, g, b = pix[i, j]
+                if b * 1.5 < 255:
+                    pix[i, j] = (r, g, int(b * 1.5))
+
+        self.img = working_img.copy()
+        self.update_array()
+
+        self.paint()
 
     def make_sepia(self):
         x, y = self.img.size
@@ -275,11 +298,13 @@ class Example(QWidget):
             self.negativeFilter.setVisible(True)
             self.whiteBlackFilter.setVisible(True)
             self.grayFilter.setVisible(True)
+            self.coldFilter.setVisible(True)
             self.sepiaFilter.setVisible(True)
             self.Filters.setText('Hide Filters')
         else:
             self.negativeFilter.hide()
             self.sepiaFilter.hide()
+            self.coldFilter.hide()
             self.whiteBlackFilter.hide()
             self.grayFilter.hide()
             self.Filters.setText('Show Filters')
@@ -315,9 +340,10 @@ class Example(QWidget):
         if self.isDrawing and self.ok and not self.doubleclick:
             try:
                 self.click = None
-                self.img = self.working_img.copy()
-                self.working_img = None
-                self.update_array()
+                if self.img.load() != self.working_img.load():
+                    self.img = self.working_img.copy()
+                    self.working_img = None
+                    self.update_array()
             except Exception:
                 pass
 
@@ -467,6 +493,7 @@ class Example(QWidget):
                 self.img.save(i)
         except Exception:
             print('Wrong Format')
+
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
